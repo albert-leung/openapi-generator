@@ -160,7 +160,7 @@ func NewConfiguration() *Configuration {
 					{{#-first}}
 					Variables: map[string]ServerVariable{
 					{{/-first}}
-						"{{{name}}}": ServerVariable{
+						"{{{name}}}": {
 							Description: "{{{description}}}{{^description}}No description provided{{/description}}",
 							DefaultValue: "{{{defaultValue}}}",
 							{{#enumValues}}

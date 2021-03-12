@@ -35,11 +35,27 @@ var (
 	xmlCheck  = regexp.MustCompile(`(?i:(?:application|text)/xml)`)
 )
 
+// APIRoundTripper is an interface that represents the ability to execute a HTTP request,
+// similar to http.Client.Do().   The difference between this interface and RoundTripper is 
+// that this interface should handle other high level protocol details such as redirects,
+// authentication, cookies etc.
+type APIRoundTripper interface {
+	// CallAPI is a wrapper function for http.Client.Do().  It can be used for additional 
+	// functionalities such as logging, adding additional HTTP headers, interpret HTTP response
+	// headers etc.  However, it SHOULD NOT modify the request that is passed to the function
+	// nor the response.  If it needs to inject additional HTTP headers, it needs to make a clone
+	// of the original request (including the HTTP headers) and then make necessary modifications/additions.
+	CallAPI(*http.Request) (*http.Response, error)
+}
+
 // APIClient manages communication with the {{appName}} API v{{version}}
 // In most cases there should be only one, shared, APIClient.
 type APIClient struct {
 	cfg    *Configuration
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
+	custom bool	   // whether the client is created using NewCustomAPIClient
+	
+	customRoundTrip APIRoundTripper
 
 	// API Services
 {{#apiInfo}}
@@ -47,10 +63,10 @@ type APIClient struct {
 {{#operations}}
 
   {{#generateInterfaces}}
-	{{classname}} {{classname}}
+	{{classname}}
   {{/generateInterfaces}}
   {{^generateInterfaces}}
-	{{classname}} *{{classname}}Service
+	*{{classname}}Service
   {{/generateInterfaces}}
 {{/operations}}
 {{/apis}}
@@ -171,6 +187,10 @@ func parameterToJson(obj interface{}) (string, error) {
 
 // callAPI do the request.
 func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
+	if c.customRoundTrip != nil {
+		// call custom CallAPI method provided by user
+		return c.customRoundTrip.CallAPI(request)
+	}
 	if c.cfg.Debug {
 		dump, err := httputil.DumpRequestOut(request, true)
 		if err != nil {

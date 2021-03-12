@@ -37,6 +37,12 @@ type {{classname}} interface {
 	 * @return {{{.}}}{{/returnType}}
 	 */
 	{{nickname}}Execute(r {{#structPrefix}}{{&classname}}{{/structPrefix}}Api{{operationId}}Request) ({{#returnType}}{{{.}}}, {{/returnType}}*_nethttp.Response, error)
+
+	// Do{{nickname}} executes the request to {{nickname}} {{#returnType}}
+	// @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().{{#pathParams}}
+	// @param {{paramName}}{{#description}} {{{.}}}{{/description}}{{/pathParams}}
+	// @return {{{.}}}{{/returnType}}
+	Do{{nickname}}(ctx _context.Context{{#pathParams}}, {{paramName}} {{{dataType}}}{{/pathParams}}) ({{#returnType}}{{{.}}}, {{/returnType}}*_nethttp.Response, error)
 	{{/operation}}
 }
 {{/generateInterfaces}}
@@ -82,6 +88,22 @@ func (a *{{{classname}}}Service) {{{nickname}}}(ctx _context.Context{{#pathParam
 		{{paramName}}: {{paramName}},
 		{{/pathParams}}
 	}
+}
+
+//
+// Do{{nickname}} executes the request{{#returnType}}
+// @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().{{#pathParams}}
+// @param {{paramName}}{{#description}} {{{.}}}{{/description}}{{/pathParams}}
+// @return {{{.}}}{{/returnType}}
+func (a *{{{classname}}}Service) Do{{nickname}}(ctx _context.Context{{#pathParams}}, {{paramName}} {{{dataType}}}{{/pathParams}}) ({{#returnType}}{{{.}}}, {{/returnType}}*_nethttp.Response, error) {
+	r := {{#structPrefix}}{{&classname}}{{/structPrefix}}Api{{operationId}}Request{
+		ApiService: a,
+		ctx: ctx,
+		{{#pathParams}}
+		{{paramName}}: {{paramName}},
+		{{/pathParams}}
+	}
+	return r.ApiService.{{nickname}}Execute(r)
 }
 
 /*
